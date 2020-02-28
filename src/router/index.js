@@ -42,8 +42,26 @@ const routes = [
         name:'post',
         component:()=>import('@/components/post'),
         meta:{
-          title:'闲侃 - 帖子'
-        }
+          title:'闲侃 - 帖屋'
+        },
+        children:[
+          {
+            path:'/main/post/newPost',
+            name:'newPost',
+            component:()=>import('@/components/post/newPost.vue'),
+            meta:{
+              title:'闲侃 - 最新'
+            }
+          },
+          {
+            path:'/main/post/recPost',
+            name:'recPost',
+            component:()=>import('@/components/post/recPost.vue'),
+            meta:{
+              title:'闲侃 - 推荐'
+            }
+          }
+        ]
       },
       {
         path:'/main/chat',
@@ -73,7 +91,10 @@ const router = new VueRouter({
 })
 
 router.beforeEach((to,from,next)=>{
-  
+  // 测试查看守卫条件和路由去向
+  // console.log(store.state.login.loginFlag)
+  // console.log(to);
+
   if(to.name==="login"||to.name==="register"||to.name==="boot"){
     if(to.meta.title){
       document.title = to.meta.title;

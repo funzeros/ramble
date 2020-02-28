@@ -12,7 +12,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* text-align: center; */
-    color: #333;
 
     .bounce-enter-active {
     animation: bounce-in .5s;
@@ -31,6 +30,7 @@
         transform: scale(1);
       }
     }
+     
 
   }
 
@@ -45,7 +45,6 @@
   img{
     content: normal !important;
   }
-
 
 </style>
 

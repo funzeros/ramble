@@ -3,10 +3,10 @@
         <router-view></router-view>
         <nav class="tabBar">
             <li class="tab" v-for="(tab,index) of tabList" :key="tab.id" @click="chooseTab(index)">
-                <router-link class="cont" :to="tab.router">
-                    <span class="iconfont" :class="tab.sel?tab.seliconfont:tab.iconfont"></span>
+                <div  class="cont" :class="tab.sel?'darkB':'lightB'" :to="tab.router">
+                    <span class="iconfont" :class="tab.seliconfont"></span>
                     <span class="text">{{tab.title}}</span>
-                </router-link>
+                </div>
             </li>
         </nav>
     </div>
@@ -26,15 +26,22 @@ export default {
             let len = this.$store.state.main.tabList.length;
             for(let i = 0 ;i<len;i++){
                 this.$store.state.main.tabList[i].sel = false;
-            }
+            };
             this.$store.state.main.tabList[index].sel = true;
+            let currentPath = this.$route.path.split("/")[2];
+            let nextPath = this.$store.state.main.tabList[index].router.split("/")[2];
+            if(currentPath === nextPath){
+                console.log('阻止了一次自跳转');
+                return;
+            }
+            this.$router.push({path:this.$store.state.main.tabList[index].router});
 
        }
 
     },
     computed:{
         tabList(){
-            return this.$store.state.main.tabList;
+            return this.$store.state.main.tabList;//用计算属性从主页的状态管理中取到主页tabBar信息
         }
     }
 }
@@ -62,15 +69,25 @@ export default {
                     align-items: center;
                     color: #86cce8;
                     height: 50px;
-
-
+                    background: #fff;
+                    &.darkB{
+                    background: #86cce8;//选中状态的深色背景
+                    color:#fff;//选中状态的浅色字体
+                    }
+                    &.lightB{
+                        background: #fff;//选中状态的浅色背景
+                        color:#86cce8;//未选中状态的深色字体
+                    }
                     .iconfont{
                         font-size: 24px;
                     }
                     .text{
                         font-size: 18px;
+
                     }
+                
                 }
+                
             }
         }
     }

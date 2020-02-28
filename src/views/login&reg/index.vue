@@ -1,6 +1,6 @@
 <template>
     <div id="login" class="login">
-        <img class="logo"  :src="imglogo" alt="闲侃" />
+        <img class="logo"  :src="imgLogo" alt="闲侃" />
         <div class="blank"></div>
         <van-cell-group>
             <van-field
@@ -32,14 +32,14 @@
 </template>
 <script>
 import sha256 from "js-sha256"
-import imglogo from "@/assets/rambLogo.png"
+import imgLogo from "@/assets/rambLogo.png"
 export default {
     data(){
         return {
             username:"",
             password:"",
             secPassword:"",
-            imglogo:imglogo
+            imgLogo:imgLogo
         }
     },
     methods:{
