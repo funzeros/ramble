@@ -1,115 +1,141 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import boot from '@/views/boot/index.vue';
-import store from '@/store';
-
-Vue.use(VueRouter)
+import Vue from "vue";
+import VueRouter from "vue-router";
+import boot from "@/views/boot/index.vue";
+// import store from "@/store";
+import storage from "@/assets/storage.js";
+import { get_info_by_token } from "@/api/user.js";
+Vue.use(VueRouter);
 
 const routes = [
   {
-    path:'/',
-    redirect:'/boot',
-    meta:{
-      title:'闲侃'
-    }
-  },
-  {
-    path:'/boot',
-    name:'boot',
-    component:boot,
-    meta:{
-      title:'闲侃 - 启动'
-    }
-  },
-  {
-    path:'/login',
-    name:'login',
-    component:()=>import('@/views/login&reg/index.vue'),
-    meta:{
-      title:'闲侃 - 登录'
-    }
-  },
-  {
-    path:'/main',
-    name:'main',
-    component:()=>import('@/views/main'),
-    meta:{
-      title:'闲侃 - 主页'
+    path: "/",
+    redirect: "/boot",
+    meta: {
+      title: "闲侃",
+      permit: true,
     },
-    children:[
+  },
+  {
+    path: "/boot",
+    name: "boot",
+    component: boot,
+    meta: {
+      title: "闲侃 - 启动",
+      permit: true,
+    },
+  },
+  {
+    path: "/login",
+    name: "login",
+    component: () => import("@/views/login&reg/index.vue"),
+    meta: {
+      title: "闲侃 - 登录",
+      permit: true,
+    },
+  },
+  {
+    path: "/reg",
+    name: "reg",
+    component: () => import("@/views/login&reg/reg.vue"),
+    meta: {
+      title: "闲侃 - 注册",
+      permit: true,
+    },
+  },
+  {
+    path: "/forget",
+    name: "forget",
+    component: () => import("@/views/login&reg/forget.vue"),
+    meta: {
+      title: "闲侃 - 忘记密码",
+      permit: true,
+    },
+  },
+  {
+    path: "/main",
+    name: "main",
+    component: () => import("@/views/main"),
+    meta: {
+      title: "闲侃 - 主页",
+      permit: false,
+    },
+    children: [
       {
-        path:'/main/post',
-        name:'post',
-        component:()=>import('@/components/post'),
-        meta:{
-          title:'闲侃 - 帖屋'
+        path: "/main/post",
+        name: "post",
+        component: () => import("@/components/post"),
+        meta: {
+          title: "闲侃 - 帖屋",
+          permit: false,
         },
-        children:[
+        children: [
           {
-            path:'/main/post/newPost',
-            name:'newPost',
-            component:()=>import('@/components/post/newPost.vue'),
-            meta:{
-              title:'闲侃 - 最新'
-            }
+            path: "/main/post/newPost",
+            name: "newPost",
+            component: () => import("@/components/post/newPost.vue"),
+            meta: {
+              title: "闲侃 - 最新",
+              permit: false,
+            },
           },
           {
-            path:'/main/post/recPost',
-            name:'recPost',
-            component:()=>import('@/components/post/recPost.vue'),
-            meta:{
-              title:'闲侃 - 推荐'
-            }
-          }
-        ]
+            path: "/main/post/recPost",
+            name: "recPost",
+            component: () => import("@/components/post/recPost.vue"),
+            meta: {
+              title: "闲侃 - 推荐",
+              permit: false,
+            },
+          },
+        ],
       },
       {
-        path:'/main/chat',
-        name:'chat',
-        component:()=>import('@/components/chat'),
-        meta:{
-          title:'闲侃 - 好友'
-        }
+        path: "/main/chat",
+        name: "chat",
+        component: () => import("@/components/chat"),
+        meta: {
+          title: "闲侃 - 聊天",
+          permit: false,
+        },
       },
       {
-        path:'/main/my',
-        name:'my',
-        component:()=>import('@/components/my'),
-        meta:{
-          title:'闲侃 - 我的'
-        }
-      }
-    ]
-  }
-]
-
+        path: "/main/my",
+        name: "my",
+        component: () => import("@/components/my"),
+        meta: {
+          title: "闲侃 - 我的",
+          permit: false,
+        },
+      },
+    ],
+  },
+];
 
 const router = new VueRouter({
-  mode: 'history',
+  mode: "history",
   base: process.env.BASE_URL,
-  routes
-})
+  routes,
+});
 
-router.beforeEach((to,from,next)=>{
-  // 测试查看守卫条件和路由去向
-  // console.log(store.state.login.loginFlag)
-  // console.log(to);
-
-  if(to.name==="login"||to.name==="register"||to.name==="boot"){
-    if(to.meta.title){
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.permit) {
+    if (to.meta.title) {
       document.title = to.meta.title;
     }
     next();
-  }else if(store.state.login.loginFlag){
-    if(to.meta.title){
-      document.title = to.meta.title;
+  } else if (storage.get("TOKEN")) {
+    let result = await get_info_by_token();
+    if (result.data.code === 0) {
+      if (to.meta.title) {
+        document.title = to.meta.title;
+      }
+      next();
+    } else {
+      next("/login");
     }
-    next();
-  }else{
-    next('login');
+  } else {
+    next("/login");
   }
+});
 
-})
-
-
-export default router
+export default router;
