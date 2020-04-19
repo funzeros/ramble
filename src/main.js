@@ -3,7 +3,6 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 import axios from "axios";
-import BScroll from "better-scroll";
 import Vant from "vant";
 import "vant/lib/index.css";
 import "@/assets/iconfont/iconfont.css";
@@ -19,9 +18,8 @@ Router.prototype.push = function push(location, onResolve, onReject) {
 
 Vue.use(Vant);
 Vue.config.productionTip = false;
-// axios和better-scroll写入原型
+// axios写入原型
 Vue.prototype.$axios = axios;
-Vue.prototype.$BScroll = BScroll;
 // 图片预览
 import { ImagePreview } from "vant";
 Vue.prototype.$imagePreview = ImagePreview;

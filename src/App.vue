@@ -14,10 +14,10 @@
   /* text-align: center; */
 
   .bounce-enter-active {
-    animation: bounce-in 0.4s reverse;
+    animation: bounce-in 0.3s reverse;
   }
   .bounce-leave-active {
-    animation: bounce-in 0.4s;
+    animation: bounce-in 0.3s;
   }
   @keyframes bounce-in {
     0% {

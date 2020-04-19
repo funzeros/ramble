@@ -4,28 +4,28 @@
   </div>
 </template>
 <script>
-import imglogo from "@/assets/rambLogo.png"
+import imglogo from "@/assets/rambLogo.png";
 export default {
   data() {
     return {
-      visible: '',
-      imglogo:imglogo,
+      visible: "",
+      imglogo: imglogo,
     };
   },
   methods: {},
   computed: {},
   mounted() {
     this.timer = setTimeout(() => {
-      this.visible = 'opacity: 1';
-      this.timer = setTimeout(()=>{
-        this.visible = 'opacity: 1;transform: translateY(-100px)';
-        this.timer = setTimeout(()=>{
+      this.visible = "opacity: 1";
+      this.timer = setTimeout(() => {
+        this.visible = "opacity: 1;transform: translateY(-100px)";
+        this.timer = setTimeout(() => {
           clearTimeout(this.timer);
-          this.$router.push({name:'post'})
-        },700)
-      },500);
+          this.$router.push({ name: "login" });
+        }, 700);
+      }, 500);
     }, 500);
-  }
+  },
 };
 </script>
 <style lang="scss" scoped>

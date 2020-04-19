@@ -52,6 +52,24 @@ const routes = [
     },
   },
   {
+    path: "/main/setting/:id",
+    name: "setting",
+    component: () => import("@/components/my/setting.vue"),
+    meta: {
+      title: "闲侃 - 设置",
+      permit: true,
+    },
+  },
+  {
+    path: "/detail/:id",
+    name: "detail",
+    component: () => import("@/views/detail/index.vue"),
+    meta: {
+      title: "闲侃 - 帖子",
+      permit: true,
+    },
+  },
+  {
     path: "/main",
     name: "main",
     component: () => import("@/views/main"),
@@ -83,7 +101,7 @@ const routes = [
             name: "recPost",
             component: () => import("@/components/post/recPost.vue"),
             meta: {
-              title: "闲侃 - 推荐",
+              title: "闲侃 - 热门",
               permit: false,
             },
           },

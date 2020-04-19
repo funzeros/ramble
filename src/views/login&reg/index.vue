@@ -19,7 +19,7 @@
       />
     </van-cell-group>
     <div class="blank"></div>
-    <van-button type="primary" :color="getColor" @click="submit"
+    <van-button type="primary" :color="getColor" @click.stop="submit"
       >确认登录</van-button
     >
     <p class="other">
@@ -65,13 +65,16 @@ export default {
         this.$storage.set("TOKEN", result.data.data.token);
         this.getInfo();
         this.$router.push({ name: "newPost" });
+      } else {
+        this.$toast("用户名或密码错误");
       }
     },
     async getInfo() {
       let result = await get_info_by_token();
       if (result.data.code === 0) {
         this.$store.state.userInfo = result.data.data;
-        console.log(this.$store.state.userInfo);
+      } else {
+        this.$toast("token失效");
       }
     },
   },

@@ -1,268 +1,394 @@
 <template>
-    <div id="recPost">
-        <!-- 推荐页暂弃用话题    -->
-        <!-- 因使用BetterScroll 吸顶效果暂时失效,替代方案暂无 -->
-        <!-- <div class="topics" ref="topicScroll">
-            <div class="topicWrap" ref="topicWrap">
-                <a v-for="item of getTopic" :key="item.tid" class="topic" href="javascript:;">
-                    #{{item.title}}
-                </a>
+  <div id="recPost">
+    <div class="posts">
+      <van-list
+        v-model="loading"
+        :finished="finished"
+        finished-text="没有更多了"
+        @load="onLoad"
+      >
+        <van-cell
+          v-for="item of postList"
+          :key="item.id"
+          class="postItem"
+          @click.stop="goTo(item.id)"
+        >
+          <div class="info">
+            <!-- 头像 -->
+            <div class="avatar">
+              <img :src="item.avatar" :alt="item.nickname" />
             </div>
-        </div> -->
-        <div class="content">
-            <a v-for="item of getPosts" :key="item.pid" class="postItem" href="javascript:;">
-                <div class="info">
-                    <!-- 头像 -->
-                    <div class="avatar">
-                        <img :src="item.avatar" :alt="item.username">
-                    </div>
-                    <div class="detail">
-                        <!-- 昵称 -->
-                        <p class="name">{{item.username}}</p>
-                        <!-- 发布时间 -->
-                        <p class="date">{{item.postdateR}}</p>
-                    </div>
-                    <!-- 评论 -->
-                    <div class="comments">
-                        <div class="fr">
-                            <span class="iconfont icon-comments"></span><span class="count">{{item.comNum}}</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- 正文内容 -->
-                <div  class="text">
-                    <!-- 后续做正则匹配追加话题链接 -->
-                    <div class="textInner" v-html="item.content"></div>
-                    <!-- 图片 -->
-                    <div class="imag">
-                        <li class="imgLi"  v-for="(unit,index) of item.img" :key="unit" v-lazy:background-image="unit" v-show="index<3" @click="preImag(index,item.img)"></li>
-                        
-                    </div>
-                </div>
-                <!-- 下方操作 -->
-                <div class="operate">
-                    <!-- 分享 -->
-                    <span class="iconfont fl icon-resonserate"></span>
-                    
-                    <!-- 收藏 -->
-                    <div class="fr ">
-                        <span class="iconfont icon-collection"></span><span class="count">{{item.collect.length}}</span>
-                    </div>
-                    <!-- 点赞 -->
-                     
-                    <div class="fr">
-                        <span class="iconfont icon-good"></span><span class="count">{{item.like.length}}</span>
-                    </div>
-
-                </div>
-            </a>
-        </div>
+            <div class="detail">
+              <!-- 昵称 -->
+              <p class="name">{{ item.nickname }}</p>
+              <!-- 发布时间 -->
+              <p class="date">{{ solveTime(item.ptime) }}</p>
+            </div>
+            <!-- 评论 -->
+            <div class="comments">
+              <div class="fr">
+                <span class="iconfont icon-comments"></span>
+              </div>
+            </div>
+          </div>
+          <!-- 正文内容 -->
+          <div class="text">
+            <!-- 后续做正则匹配追加话题链接 -->
+            <div class="textInner" v-html="item.body"></div>
+            <!-- 图片 -->
+            <div class="imag">
+              <li
+                class="imgLi"
+                v-for="(unit, index) of solveArr(item.img_url)"
+                :key="unit"
+                v-lazy:background-image="unit"
+                v-show="index < 3"
+                @click.stop="preImag(index, solveArr(item.img_url))"
+              ></li>
+            </div>
+          </div>
+          <!-- 下方操作 -->
+          <div class="operate">
+            <!-- 分享 -->
+            <span
+              class="iconfont fl icon-resonserate"
+              @click.stop="showShare = true"
+            ></span>
+            <!-- 收藏 -->
+            <div class="fr" @click.stop="setCollect(item.id, item)">
+              <span class="iconfont" :class="getCollect(item.id)"></span
+              ><span class="count">{{ item.collects }}</span>
+            </div>
+            <!-- 点赞 -->
+            <div class="fr" @click.stop="setLike(item.id, item)">
+              <span class="iconfont" :class="getLike(item.id)"></span
+              ><span class="count">{{ item.likes }}</span>
+            </div>
+          </div>
+        </van-cell>
+      </van-list>
     </div>
+    <van-share-sheet
+      v-model="showShare"
+      title="立即分享给好友"
+      :options="options"
+      @select="onSelect"
+    />
+  </div>
 </template>
 <script>
-
+import { get_topic } from "@/api/topic";
+import { post_page, set_likes, set_collects } from "@/api/posts";
+import { get_info_by_token } from "@/api/user.js";
 export default {
-    data() {
-        return {
-            
+  data() {
+    return {
+      topic: [],
+      postList: [],
+      size: 10,
+      page: 1,
+      loading: true,
+      finished: false,
+      type: 0,
+      showShare: false,
+      options: [
+        { name: "微信", icon: "wechat" },
+        { name: "微博", icon: "weibo" },
+        { name: "复制链接", icon: "link" },
+        { name: "分享海报", icon: "poster" },
+        { name: "二维码", icon: "qrcode" },
+      ],
+    };
+  },
+  methods: {
+    //点赞
+    getLike(id) {
+      let arr = this.$store.state.userInfo.like_posts || "";
+      arr = arr.split(",");
+      let item = arr.find((item) => {
+        return id == item;
+      });
+      return item ? "icon-good-fill" : "icon-good";
+    },
+    async setLike(id, item) {
+      let arr = this.$store.state.userInfo.like_posts || "";
+      arr = arr.split(",");
+      let item2 = arr.find((item3) => {
+        return id == item3;
+      });
+      let type = 1;
+      if (item2) {
+        type = 0;
+      }
+      let data = {
+        type: type,
+        pid: id,
+      };
+      let result = await set_likes(data);
+      if (result.data.code === 0) {
+        let result2 = await get_info_by_token();
+        if (result2.data.code === 0) {
+          this.$store.state.userInfo = result2.data.data;
+        } else {
+          this.$toast("token失效");
         }
-    },
-    methods:{
-      
-        solveDate(){
-             let nowD = new Date();
-            this.$store.state.post.recPosts.posts.forEach((item,index)=>{
-                let dateArr = item.postdate.split("/");
-                let vD = new Date(dateArr[0],dateArr[1],dateArr[2],dateArr[3],dateArr[4],dateArr[5]);
-                let tD = nowD-vD;
-                // 时间差 -> td  当前时间 -> nowD 发帖时间 -> vD
-                if(tD<=1800000){
-                    // 发帖时间距现在小于半个小时;
-                    // 转换成秒
-                    tD = Math.ceil(tD/1000);
-                    if(tD<60){
-                        // 如小于60S,显示多少秒之前
-                        item.postdateR = `${tD}秒之前`;
-                    }else{
-                        // 其他显示多少分钟之前
-                        tD = Math.ceil(tD/60);
-                        item.postdateR = `${tD}分钟之前`;
-                    }
-                    // let tDText = 
-                }else{
-                    // 如大于半个小时
-                    // 直接转换日期格式并保存
-                    item.postdateR = `${dateArr[0]}年${+dateArr[1]+1}月${dateArr[2]}日${dateArr[3]}:${dateArr[4]}`;
-                }
-            });
-        },
-        preImag(index,lists){
-            this.$imagePreview({
-                images: lists,
-                showIndex:true,
-                loop:false,
-                startPosition: index
-            });
+        if (type) {
+          item.likes += 1;
+        } else {
+          item.likes -= 1;
         }
-        
+      } else {
+        this.$toast(result.data.msg);
+      }
     },
-    computed:{
-        getPosts(){
-            if(!this.$store.state.post.recPosts.posts.length){
-                return [];
-                // 如帖子数据长度为0则直接返回空数组
-            }
-            // Vue3中可能会导致死循环,监听到数组内部继续执行数据更新
-            // 放在此处目前可保证每次获取加载路由时会更新时间
-            //修改日期格式
-            this.solveDate();
-            
-            return this.$store.state.post.recPosts.posts;
-        },
-        getTopic(){
-            return this.$store.state.post.recPosts.topic;
+    //收藏
+    getCollect(id) {
+      let arr = this.$store.state.userInfo.collect_posts || "";
+      arr = arr.split(",");
+      let item = arr.find((item) => {
+        return id == item;
+      });
+      return item ? "icon-collection-fill" : "icon-collection";
+    },
+    async setCollect(id, item) {
+      let arr = this.$store.state.userInfo.collect_posts || "";
+      arr = arr.split(",");
+      let item2 = arr.find((item3) => {
+        return id == item3;
+      });
+      let type = 1;
+      if (item2) {
+        type = 0;
+      }
+      let data = {
+        type: type,
+        pid: id,
+      };
+      let result = await set_collects(data);
+      if (result.data.code === 0) {
+        let result2 = await get_info_by_token();
+        if (result2.data.code === 0) {
+          this.$store.state.userInfo = result2.data.data;
+        } else {
+          this.$toast("token失效");
         }
-
-    },
-    mounted(){
-        console.log('推荐初始化中')
-        
-  
-    },
-    created(){
-        if(!this.$store.state.post.recPosts.posts.length){
-            this.$store.dispatch("post/getRecPosts");
+        if (type) {
+          item.collects += 1;
+        } else {
+          item.collects -= 1;
         }
+      } else {
+        this.$toast(result.data.msg);
+      }
     },
-    updated(){
-        console.log('数据刷新');
+    //分享面板
+    onSelect(option) {
+      this.$toast(option.name);
+      this.showShare = false;
     },
-    destroyed(){
-        this.$attrs.saveScrollY(1);//保存当前滚动条进度;
-        // 销毁话题滚动条
-    }   
-}
+    goTo(id) {
+      this.$router.push(`/detail/${id}`);
+    },
+    onLoad() {
+      this.getPosts();
+      this.page += 1;
+    },
+    async getPosts() {
+      let params = {
+        size: this.size,
+        page: this.page,
+        type: 1,
+      };
+      const result = await post_page(params);
+      if (result.data.code === 0) {
+        if (result.data.data.length) {
+          this.postList = this.postList.concat(result.data.data);
+          this.loading = false;
+        } else {
+          this.loading = false;
+          this.finished = true;
+        }
+      } else {
+        this.$toast(result.data.msg);
+      }
+    },
+    solveTime(time) {
+      let d = new Date(time);
+      let nowD = new Date();
+      let tD = nowD - d;
+      // 时间差 -> td  当前时间 -> nowD 发帖时间 -> vD
+      if (tD <= 1800000) {
+        // 发帖时间距现在小于半个小时;
+        // 转换成秒
+        tD = Math.ceil(tD / 1000);
+        if (tD < 60) {
+          // 如小于60S,显示多少秒之前
+          d = `${tD}秒之前`;
+        } else {
+          // 其他显示多少分钟之前
+          tD = Math.ceil(tD / 60);
+          d = `${tD}分钟之前`;
+        }
+        // let tDText =
+      } else {
+        // 如大于半个小时
+        // 直接转换日期格式并保存
+        d = `${d.getFullYear()}年${d.getMonth() +
+          1}月${d.getDate()}日${d.getHours()}:${
+          d.getMinutes() < 10 ? "0" + d.getMinutes() : d.getMinutes()
+        }`;
+      }
+      return d;
+    },
+    solveArr(str) {
+      if (str) {
+        let arr = str.split(",");
+        return arr;
+      } else {
+        return [];
+      }
+    },
+    preImag(index, lists) {
+      this.$imagePreview({
+        images: lists,
+        showIndex: true,
+        loop: false,
+        startPosition: index,
+      });
+    },
+    async getTopic() {
+      const result = await get_topic();
+      if (result.data.code === 0) {
+        this.topic = result.data.data;
+      } else {
+        this.$toast(result.data.msg);
+      }
+    },
+  },
+  mounted() {
+    this.getTopic();
+    this.onLoad();
+  },
+};
 </script>
 <style lang="scss" scoped>
-    #recPost{
-        overflow: hidden;
-        .ad{
-            height: 30px;
-            text-align: center;
-            line-height: 30px;
-            margin: 5px 5px;
-            border: 1px solid #333;
-            border-radius: 20px;
-        }
-        .topics{
-            height: 30px;
-            overflow: hidden;
-            width: 100%;
-            background: #fff;
-            .topicWrap{
-                white-space: nowrap;
-                a{  
-                    margin: 0 0 0 10px;
-                    font-weight: 900;
-                    color: #333;
-                    line-height: 30px;
+#recPost {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  .ad {
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+    margin: 5px 5px;
+    border: 1px solid #333;
+    border-radius: 20px;
+  }
+  .topics {
+    height: 30px;
+    overflow: hidden;
+    width: 100%;
+    background: #fff;
+    .topicWrap {
+      white-space: nowrap;
+      a {
+        margin: 0 0 0 10px;
+        font-weight: 900;
+        color: #333;
+        line-height: 30px;
 
-                    &:active{
-                        color: #ea3;
-                        text-decoration:underline;
-                    }
-                    
-
-                }
-            }
+        &:active {
+          color: #ea3;
+          text-decoration: underline;
         }
-        .content{
-            .postItem{
-                display: block;
-                margin: 8px 12px;
-                //   background: #eee;
-                border-bottom: 1px solid #ccf;
-                min-height: 100px;
-                //   padding: 10px;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
-                color: #222;
-                .info{
-                    height: 50px;
-                    display:flex;
-                    justify-content: flex-start;
-                    align-items: center; 
-                    .avatar{
-                        width: 45px;
-                        height: 45px;
-                        overflow: hidden;
-                        border-radius: 50%;
-                        img{
-                            width: 100%;
-                        }
-                    }
-                    .detail{
-                        padding-left: 10px;
-                        .name{
-                            font-size: 16px;
-                            color: #555;
-                        }
-                        .date{
-                            font-size: 14px;
-                            color: #aaa;
-                        }
-                    }
-                    .comments{
-                        flex: 1;
-                        .iconfont{
-                            font-size: 24px;
-                            color: #222;
-                        }
-                        .count{
-                        line-height: 24px;
-                        color: #999;
-                        font-size: 14px;
-                    }
-                    }
-                }
-                .text{
-                    padding: 5px 5px;
-                    .textInner{
-                        display: -webkit-box;
-                        overflow: hidden;  
-                        -webkit-line-clamp: 5;
-                        -webkit-box-orient: vertical;
-                    }
-                    .imag{
-                        padding-top: 5px;
-                        .imgLi{
-                            display: inline-block;
-                            margin: 0 5px;
-                            height: 100px;
-                            width: 100px;
-                            border-radius: 10%;
-                            background-position: center center;
-                            background-repeat: no-repeat;
-                            background-size: cover;
-                        }
-                    }
-
-                }
-                .operate{
-                    .iconfont{
-                        font-size: 24px;
-                    }
-                    .count{
-                        line-height: 24px;
-                        color: #999;
-                        font-size: 14px;
-                    }
-                }
-                   
-                    
-            }
-            padding-bottom: 50px;
-        }
+      }
     }
+  }
+}
+.posts {
+  flex: 1;
+  overflow: scroll;
+}
+.postItem {
+  display: block;
+  //   background: #eee;
+  border-bottom: 1px solid #ccf;
+  min-height: 100px;
+  //   padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: #222;
+  .info {
+    height: 50px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    .avatar {
+      width: 45px;
+      height: 45px;
+      overflow: hidden;
+      border-radius: 50%;
+      img {
+        width: 100%;
+      }
+    }
+    .detail {
+      padding-left: 10px;
+      .name {
+        font-size: 16px;
+        color: #555;
+      }
+      .date {
+        font-size: 14px;
+        color: #aaa;
+      }
+    }
+    .comments {
+      flex: 1;
+      .iconfont {
+        font-size: 24px;
+        color: #222;
+      }
+      .count {
+        line-height: 24px;
+        color: #999;
+        font-size: 14px;
+      }
+    }
+  }
+  .text {
+    padding: 5px 5px;
+    .textInner {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+    }
+    .imag {
+      padding-top: 5px;
+      .imgLi {
+        display: inline-block;
+        margin: 0 5px;
+        height: 100px;
+        width: 100px;
+        border-radius: 10%;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+    }
+  }
+  .operate {
+    .iconfont {
+      font-size: 24px;
+    }
+    .count {
+      line-height: 24px;
+      color: #999;
+      font-size: 14px;
+    }
+  }
+}
 </style>

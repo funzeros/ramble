@@ -1,85 +1,71 @@
 <template>
-  <div id="newPost">
-    <div class="ad">
-      广告位
-    </div>
-    <van-tabs class="topics" v-model="active" @change="changeTopic">
-      <van-tab title="全部" />
-      <van-tab
-        v-for="item of topic"
+  <div class="posts">
+    <van-list
+      v-model="loading"
+      :finished="finished"
+      finished-text="没有更多了"
+      @load="onLoad"
+    >
+      <van-cell
+        v-for="item of postList"
         :key="item.id"
-        class="topic"
-        :title="item.name"
-      />
-    </van-tabs>
-    <div class="posts">
-      <van-list
-        v-model="loading"
-        :finished="finished"
-        finished-text="没有更多了"
-        @load="onLoad"
+        class="postItem"
+        @click.stop="goTo(item.id)"
       >
-        <van-cell
-          v-for="item of postList"
-          :key="item.id"
-          class="postItem"
-          @click.stop="goTo(item.id)"
-        >
-          <div class="info">
-            <!-- 头像 -->
-            <div class="avatar">
-              <img :src="item.avatar" :alt="item.nickname" />
-            </div>
-            <div class="detail">
-              <!-- 昵称 -->
-              <p class="name">{{ item.nickname }}</p>
-              <!-- 发布时间 -->
-              <p class="date">{{ solveTime(item.ptime) }}</p>
-            </div>
-            <!-- 评论 -->
-            <div class="comments">
-              <div class="fr">
-                <span class="iconfont icon-comments"></span>
-              </div>
+        <div class="info">
+          <!-- 头像 -->
+          <div class="avatar">
+            <img :src="item.avatar" :alt="item.nickname" />
+          </div>
+          <div class="detail">
+            <!-- 昵称 -->
+            <p class="name">{{ item.nickname }}</p>
+            <!-- 发布时间 -->
+            <p class="date">{{ solveTime(item.ptime) }}</p>
+          </div>
+          <!-- 评论 -->
+          <div class="comments">
+            <div class="fr">
+              <span class="iconfont icon-comments"></span>
             </div>
           </div>
-          <!-- 正文内容 -->
-          <div class="text">
-            <!-- 后续做正则匹配追加话题链接 -->
-            <div class="textInner" v-html="item.body"></div>
-            <!-- 图片 -->
-            <div class="imag">
-              <li
-                class="imgLi"
-                v-for="(unit, index) of solveArr(item.img_url)"
-                :key="unit"
-                v-lazy:background-image="unit"
-                v-show="index < 3"
-                @click.stop="preImag(index, solveArr(item.img_url))"
-              ></li>
-            </div>
+        </div>
+        <!-- 正文内容 -->
+        <div class="text">
+          <!-- 后续做正则匹配追加话题链接 -->
+          <div class="textInner" v-html="item.body"></div>
+          <!-- 图片 -->
+          <div class="imag">
+            <li
+              class="imgLi"
+              v-for="(unit, index) of solveArr(item.img_url)"
+              :key="unit"
+              v-lazy:background-image="unit"
+              v-show="index < 3"
+              @click.stop="preImag(index, solveArr(item.img_url))"
+            ></li>
           </div>
-          <!-- 下方操作 -->
-          <div class="operate">
-            <!-- 分享 -->
-            <span
-              class="iconfont fl icon-resonserate"
-              @click.stop="showShare = true"
-            ></span>
-            <!-- 收藏 -->
-            <div class="fr" @click.stop="setCollect(item.id, item)">
-              <span class="iconfont" :class="getCollect(item.id)"></span
-              ><span class="count">{{ item.collects }}</span>
-            </div>
-            <!-- 点赞 -->
-            <div class="fr" @click.stop="setLike(item.id, item)">
-              <span class="iconfont" :class="getLike(item.id)"></span
-              ><span class="count">{{ item.likes }}</span>
-            </div>
+        </div>
+        <!-- 下方操作 -->
+        <div class="operate">
+          <!-- 分享 -->
+          <span
+            class="iconfont fl icon-resonserate"
+            @click.stop="showShare = true"
+          ></span>
+          <!-- 收藏 -->
+          <div class="fr" @click.stop="setCollect(item.id, item)">
+            <span class="iconfont" :class="getCollect(item.id)"></span
+            ><span class="count">{{ item.collects }}</span>
           </div>
-        </van-cell>
-      </van-list>
-    </div>
+          <!-- 点赞 -->
+          <div class="fr" @click.stop="setLike(item.id, item)">
+            <span class="iconfont" :class="getLike(item.id)"></span
+            ><span class="count">{{ item.likes }}</span>
+          </div>
+        </div>
+      </van-cell>
+    </van-list>
     <van-share-sheet
       v-model="showShare"
       title="立即分享给好友"
@@ -89,21 +75,17 @@
   </div>
 </template>
 <script>
-import { get_topic } from "@/api/topic";
-import { post_page, set_likes, set_collects } from "@/api/posts";
+import { post_user_collects, set_likes, set_collects } from "@/api/posts";
 import { get_info_by_token } from "@/api/user.js";
 export default {
+  name: "posts",
   data() {
     return {
-      topic: [],
       postList: [],
       size: 10,
       page: 1,
       loading: true,
       finished: false,
-      type: 0,
-      tid: 0,
-      active: 0,
       showShare: false,
       options: [
         { name: "微信", icon: "wechat" },
@@ -200,15 +182,6 @@ export default {
       this.$toast(option.name);
       this.showShare = false;
     },
-    changeTopic(name, title) {
-      let item = this.topic.find((item) => {
-        return item.name === title;
-      });
-      this.postList = [];
-      this.page = 1;
-      this.tid = (item && item.id) || 0;
-      this.getPosts();
-    },
     goTo(id) {
       this.$router.push(`/detail/${id}`);
     },
@@ -220,10 +193,9 @@ export default {
       let params = {
         size: this.size,
         page: this.page,
-        type: this.type,
-        tid: this.tid,
+        arr: this.$store.state.userInfo.collect_posts,
       };
-      const result = await post_page(params);
+      const result = await post_user_collects(params);
       if (result.data.code === 0) {
         if (result.data.data.length) {
           this.postList = this.postList.concat(result.data.data);
@@ -280,43 +252,16 @@ export default {
         startPosition: index,
       });
     },
-    async getTopic() {
-      const result = await get_topic();
-      if (result.data.code === 0) {
-        this.topic = result.data.data;
-      } else {
-        this.$toast(result.data.msg);
-      }
-    },
   },
+  computed: {},
   mounted() {
-    this.getTopic();
     this.onLoad();
   },
 };
 </script>
 <style lang="scss" scoped>
-#newPost {
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  .ad {
-    height: 30px;
-    text-align: center;
-    line-height: 30px;
-    margin: 5px 5px;
-    border: 1px solid #333;
-    border-radius: 20px;
-  }
-  .topics {
-    &::v-deep .van-tab {
-      flex-basis: 30% !important;
-    }
-  }
-}
 .posts {
-  flex: 1;
+  height: 100%;
   overflow: scroll;
 }
 .postItem {
