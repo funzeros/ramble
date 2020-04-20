@@ -43,6 +43,18 @@ export function set_collects(data) {
   return axios.post(`${base}/collects`, data);
 }
 
+// 查看帖子
 export function post_detail(data) {
   return axios.get(`${base}/detail`, { params: data });
+}
+
+// 发布帖子
+export function post_create(data) {
+  setToken();
+  return axios.post(`${base}/create`, data);
+}
+
+//删除帖子
+export function post_user_delete(data) {
+  return axios.get(`${base}/user/delete`, { params: data });
 }

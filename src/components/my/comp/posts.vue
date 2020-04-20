@@ -23,10 +23,13 @@
             <!-- 发布时间 -->
             <p class="date">{{ solveTime(item.ptime) }}</p>
           </div>
-          <!-- 评论 -->
+          <!-- 删除 -->
           <div class="comments">
             <div class="fr">
-              <span class="iconfont icon-comments"></span>
+              <span
+                class="iconfont icon-close"
+                @click.stop.prevent="deletePost(item.id, item.title)"
+              ></span>
             </div>
           </div>
         </div>
@@ -75,7 +78,12 @@
   </div>
 </template>
 <script>
-import { post_user_page, set_likes, set_collects } from "@/api/posts";
+import {
+  post_user_page,
+  set_likes,
+  set_collects,
+  post_user_delete,
+} from "@/api/posts";
 import { get_info_by_token } from "@/api/user.js";
 export default {
   name: "posts",
@@ -97,6 +105,25 @@ export default {
     };
   },
   methods: {
+    //删除
+    deletePost(id, title) {
+      this.$dialog
+        .confirm({
+          title: "提示",
+          message: `确定要删除帖子：${title} 吗？`,
+        })
+        .then(async () => {
+          // on confirm
+          const result = await post_user_delete({ pid: id });
+          if (result.data.code === 0) {
+            this.refresh();
+          }
+          this.$toast(result.data.msg);
+        })
+        .catch(() => {
+          // on cancel
+        });
+    },
     //点赞
     getLike(id) {
       let arr = this.$store.state.userInfo.like_posts || "";
@@ -188,6 +215,11 @@ export default {
     onLoad() {
       this.getPosts();
       this.page += 1;
+    },
+    refresh() {
+      this.postList = [];
+      this.page = 1;
+      this.getPosts();
     },
     async getPosts() {
       let params = {

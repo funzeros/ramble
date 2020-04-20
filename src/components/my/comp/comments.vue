@@ -12,7 +12,15 @@
         class="item"
         @click.stop="goTo(item.pid)"
       >
-        <div class="time">{{ solveTime(item.ctime) }}</div>
+        <div class="time">
+          {{ solveTime(item.ctime) }}
+          <div class="fr">
+            <span
+              class="iconfont icon-close"
+              @click.stop.prevent="deleteComments(item.id)"
+            ></span>
+          </div>
+        </div>
         <div class="title">
           你评论<span>@{{ item.cname }}</span>
         </div>
@@ -22,7 +30,7 @@
   </div>
 </template>
 <script>
-import { comments_user_page } from "@/api/comments";
+import { comments_user_page, comments_user_delete } from "@/api/comments";
 export default {
   name: "comments",
   data() {
@@ -35,6 +43,25 @@ export default {
     };
   },
   methods: {
+    //删除
+    deleteComments(id) {
+      this.$dialog
+        .confirm({
+          title: "提示",
+          message: `确定要删除评论吗？`,
+        })
+        .then(async () => {
+          // on confirm
+          const result = await comments_user_delete({ mid: id });
+          if (result.data.code === 0) {
+            this.refresh();
+          }
+          this.$toast(result.data.msg);
+        })
+        .catch(() => {
+          // on cancel
+        });
+    },
     goTo(id) {
       console.log(1);
       this.$router.push(`/detail/${id}`);
@@ -42,6 +69,11 @@ export default {
     onLoad() {
       this.getComments();
       this.page += 1;
+    },
+    refresh() {
+      this.commentsList = [];
+      this.page = 1;
+      this.getComments();
     },
     async getComments() {
       let params = {
@@ -116,5 +148,8 @@ export default {
       }
     }
   }
+}
+.fr {
+  display: inline;
 }
 </style>

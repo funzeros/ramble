@@ -96,7 +96,7 @@
     </div>
     <van-overlay :show="show" @click.stop="isShow(false)" />
     <div class="input">
-      <van-field v-model="value" placeholder="输入点什么..."
+      <van-field v-model="value" placeholder="输入点什么..." ref="input"
         ><template #button>
           <van-button size="small" type="info" @click="send">发送</van-button>
         </template></van-field
@@ -134,10 +134,12 @@ export default {
         this.sendData.fid = item1.id;
         this.sendData.tid = item2.uid;
         this.sendData.cname = item2.nickname;
+        this.$refs.input.focus();
       } else {
         this.sendData.fid = 0;
-        this.sendData.tid = this.main.id;
+        this.sendData.tid = this.main.uid;
         this.sendData.cname = this.main.nickname;
+        this.$refs.input.blur();
       }
     },
     async send() {
@@ -147,17 +149,36 @@ export default {
       }
       this.sendData.body = this.value;
       this.sendData.pid = this.pid;
+      this.sendData.avatar = this.$store.state.userInfo.avatar;
+      this.sendData.nickname = this.$store.state.userInfo.nickname;
+      console.log(this.sendData);
       const result = await comments_create(this.sendData);
       if (result.data.code === 0) {
         this.getDetail();
         this.$toast(result.data.msg);
         this.show = false;
+        this.value = "";
+        //发送通知
+        let info = this.$store.state.userInfo;
+        let data = `{"time":"${this.getTime()}","name":"${
+          info.nickname
+        }","id":"${info.id}","body":"${this.value}","tid":"${
+          this.sendData.tid
+        }","type":"2"}`;
+        console.log(data);
+        this.$store.state.ws.send(data);
       } else {
         this.$toast(result.data.msg);
       }
     },
     onClickLeft() {
       this.$router.go(-1);
+    },
+    getTime() {
+      let d = new Date();
+      return `${d.getHours()}:${
+        d.getMinutes() < 10 ? "0" + d.getMinutes() : d.getMinutes()
+      }:${d.getSeconds() < 10 ? "0" + d.getSeconds() : d.getSeconds()}`;
     },
     async getDetail() {
       const result = await post_detail({ pid: this.pid });
@@ -190,7 +211,7 @@ export default {
       this.sendData.avatar = this.$store.state.userInfo.avatar;
       this.sendData.nickname = this.$store.state.userInfo.nickname;
       this.sendData.fid = 0;
-      this.sendData.tid = this.main.id;
+      this.sendData.tid = this.main.uid;
       this.sendData.cname = this.main.nickname;
     },
     solveTime(time) {

@@ -44,6 +44,7 @@ export default {
     putOut() {
       this.$storage.remove("TOKEN");
       this.$router.push({ name: "login" });
+      this.$store.state.ws.close();
     },
   },
   computed: {

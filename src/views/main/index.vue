@@ -29,6 +29,28 @@ export default {
       this.$router.push({ path: this.$store.state.main.tabList[index].router });
       //   this.changeTabSel(index);
     },
+    getWsMsg() {
+      this.$store.state.ws.onmessage = ({ data }) => {
+        if (this.$refs.body) {
+          this.$refs.body.scrollTop = this.$refs.body.scrollHeight;
+        }
+        let res = JSON.parse(data);
+        if (!res.type) {
+          let arr = [];
+          for (let i in res) {
+            arr.push(res[i]);
+          }
+          this.$store.state.chatMembers = arr;
+        } else if (res.type == "1") {
+          this.$store.state.chatList.push(res);
+        } else if (res.type == "0") {
+          this.$notify({ type: "primary", message: `${res.name}上线啦` });
+        } else if (res.type == "2") {
+          console.log(res);
+          this.$store.state.msgP = true;
+        }
+      };
+    },
   },
   computed: {
     tabList() {
@@ -73,6 +95,8 @@ export default {
         this.$toast("token失效");
       }
     }
+    await this.$store.dispatch("userOnLine");
+    this.getWsMsg();
   },
 };
 </script>

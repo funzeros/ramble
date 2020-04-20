@@ -5,7 +5,13 @@
     </transition>
   </div>
 </template>
-
+<script>
+export default {
+  destroyed() {
+    this.$store.state.ws.close();
+  },
+};
+</script>
 <style lang="scss">
 #app {
   font-family: "Avenir", Helvetica, Arial, sans-serif;

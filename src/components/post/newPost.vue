@@ -216,6 +216,11 @@ export default {
       this.getPosts();
       this.page += 1;
     },
+    refresh() {
+      this.postList = [];
+      this.page = 1;
+      this.getPosts();
+    },
     async getPosts() {
       let params = {
         size: this.size,

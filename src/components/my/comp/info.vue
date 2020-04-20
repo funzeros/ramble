@@ -42,12 +42,13 @@ export default {
       let param = new FormData();
       param.append("file", file.file);
       const result = await img_upload(param);
-      console.log(result.data);
       if (result.data.success) {
         this.url = result.data.image_url;
         this.$toast("上传成功");
+        file.status = "done";
       } else {
         this.$toast("上传失败");
+        file.status = "failed";
       }
     },
     async submit() {
