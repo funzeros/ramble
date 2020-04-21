@@ -14,6 +14,7 @@ export default new Vuex.Store({
     chatMembers: [],
     url: url,
     ws: {},
+    wsF: 1,
   },
   mutations: {},
   actions: {
@@ -26,6 +27,7 @@ export default new Vuex.Store({
         state.ws.send(
           `{"name":"${state.userInfo.nickname}","id":"${state.userInfo.id}","body":"上线啦","type":"0"}`
         );
+        state.wsF = 0;
       };
     },
   },

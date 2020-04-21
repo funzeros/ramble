@@ -151,7 +151,6 @@ export default {
       this.sendData.pid = this.pid;
       this.sendData.avatar = this.$store.state.userInfo.avatar;
       this.sendData.nickname = this.$store.state.userInfo.nickname;
-      console.log(this.sendData);
       const result = await comments_create(this.sendData);
       if (result.data.code === 0) {
         this.getDetail();
@@ -165,8 +164,9 @@ export default {
         }","id":"${info.id}","body":"${this.value}","tid":"${
           this.sendData.tid
         }","type":"2"}`;
-        console.log(data);
-        this.$store.state.ws.send(data);
+        if (info.id !== this.sendData.tid) {
+          this.$store.state.ws.send(data);
+        }
       } else {
         this.$toast(result.data.msg);
       }
@@ -190,6 +190,11 @@ export default {
       }
     },
     solveDate(data) {
+      this.sendData.avatar = this.$store.state.userInfo.avatar;
+      this.sendData.nickname = this.$store.state.userInfo.nickname;
+      this.sendData.fid = 0;
+      this.sendData.tid = this.main.uid;
+      this.sendData.cname = this.main.nickname;
       if (data.length === 0) {
         return;
       }
@@ -208,11 +213,6 @@ export default {
         });
       });
       this.floor = arr1;
-      this.sendData.avatar = this.$store.state.userInfo.avatar;
-      this.sendData.nickname = this.$store.state.userInfo.nickname;
-      this.sendData.fid = 0;
-      this.sendData.tid = this.main.uid;
-      this.sendData.cname = this.main.nickname;
     },
     solveTime(time) {
       let d = new Date(time);
@@ -259,7 +259,7 @@ export default {
       });
     },
   },
-  created() {
+  mounted() {
     this.pid = this.$route.params.id;
     this.getDetail();
   },

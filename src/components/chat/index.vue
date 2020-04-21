@@ -96,8 +96,7 @@ export default {
         } else if (res.type == "0") {
           this.$notify({ type: "primary", message: `${res.name}上线啦` });
         } else if (res.type == "2") {
-          console.log(res);
-
+          // console.log(res);
           this.$store.state.msgP = true;
         }
       };

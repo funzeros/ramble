@@ -46,7 +46,6 @@ export default {
         } else if (res.type == "0") {
           this.$notify({ type: "primary", message: `${res.name}上线啦` });
         } else if (res.type == "2") {
-          console.log(res);
           this.$store.state.msgP = true;
         }
       };
@@ -95,8 +94,10 @@ export default {
         this.$toast("token失效");
       }
     }
-    await this.$store.dispatch("userOnLine");
-    this.getWsMsg();
+    if (this.$store.state.wsF) {
+      await this.$store.dispatch("userOnLine");
+      this.getWsMsg();
+    }
   },
 };
 </script>
