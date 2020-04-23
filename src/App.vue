@@ -9,6 +9,8 @@
 export default {
   destroyed() {
     this.$store.state.ws.close();
+    this.$store.state.ws=null;
+      this.$store.state.wsF=1;
   },
 };
 </script>
