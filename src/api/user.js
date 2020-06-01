@@ -40,7 +40,7 @@ export function send_email_code_new(data) {
 export function email_code_valid(data) {
   return axios.get(`${base}/email_code_valid`, { params: data });
 }
-
+//
 //绑定邮箱
 export function bind_email(data) {
   setToken();
